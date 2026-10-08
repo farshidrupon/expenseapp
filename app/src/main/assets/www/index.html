@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#11182b">
+  <meta name="color-scheme" content="light dark">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="description" content="Private Google Drive powered personal expense tracker.">
+  <title>Personal Expense Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+    <section id="authScreen" class="auth-screen">
+      <div class="auth-card glass">
+        <div class="brand-mark" aria-hidden="true">
+          <span class="brand-orbit"></span>
+          <span class="brand-core">৳</span>
+        </div>
+        <p class="eyebrow">PRIVATE CLOUD FINANCE</p>
+        <h1>Personal Expense Tracker</h1>
+        <p class="auth-copy">Your financial records stay in your private Google Drive spreadsheet. This application does not use a third-party financial database.</p>
+        <div id="configWarning" class="inline-alert warning hidden"></div>
+        <button id="nativeSignInBtn" class="button button-primary hidden" type="button">Sign in with Google</button>
+        <div id="googleButton" class="google-button-wrap" aria-label="Sign in with Google"></div>
+        <button id="reconnectAuthBtn" class="button button-secondary hidden" type="button">Reconnect Google</button>
+        <div class="privacy-note">
+          <span class="status-dot"></span>
+          <span>Your expense data is stored in your private Google Drive spreadsheet. The application does not upload your financial data to any third-party database.</span>
+        </div>
+      </div>
+    </section>
+
+    <main id="mainApp" class="hidden">
+      <header class="topbar">
+        <div class="topbar-brand">
+          <div class="brand-icon">৳</div>
+          <div>
+            <strong>Expense Tracker</strong>
+            <span>Google Drive source of truth</span>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <div id="syncPill" class="sync-pill neutral"><span class="sync-dot"></span><span id="syncText">Connecting</span></div>
+          <button id="themeToggle" class="icon-button" type="button" title="Toggle theme" aria-label="Toggle theme">☾</button>
+          <button id="settingsButton" class="icon-button" type="button" title="Settings" aria-label="Settings">⚙</button>
+        </div>
+      </header>
+
+      <section class="dashboard-wrap">
+        <div class="dashboard-header">
+          <div>
+            <p class="eyebrow">PERSONAL FINANCE / LIVE CLOUD DATA</p>
+            <h2>Track every taka with clarity.</h2>
+            <p class="muted">Google Sheets is the authoritative database. Changes are synchronized immediately when you save.</p>
+          </div>
+          <div class="account-chip">
+            <div class="account-avatar" id="accountAvatar">G</div>
+            <div>
+              <span class="muted small">Signed in as</span>
+              <strong id="accountName">Google Account</strong>
+            </div>
+          </div>
+        </div>
+
+        <nav class="main-tabs" aria-label="Main navigation">
+          <button class="main-tab active" type="button" data-tab="expenses" aria-current="page"><span class="tab-icon" aria-hidden="true">＋</span><span class="tab-label"><span class="tab-full">All Expense Input</span><span class="tab-short">Expenses</span></span></button>
+          <button class="main-tab" type="button" data-tab="monthly"><span class="tab-icon" aria-hidden="true">◷</span><span class="tab-label"><span class="tab-full">Monthly Summary Category Wise</span><span class="tab-short">Monthly</span></span></button>
+          <button class="main-tab" type="button" data-tab="yearly"><span class="tab-icon" aria-hidden="true">▥</span><span class="tab-label"><span class="tab-full">Yearly Summary Category Wise</span><span class="tab-short">Yearly</span></span></button>
+          <button class="main-tab" type="button" data-tab="total"><span class="tab-icon" aria-hidden="true">∞</span><span class="tab-label"><span class="tab-full">Total Summary Category Wise</span><span class="tab-short">Lifetime</span></span></button>
+        </nav>
+
+        <section id="tab-expenses" class="tab-panel active">
+          <div class="control-bar card">
+            <div class="control-group">
+              <label for="expenseYear">Year</label>
+              <select id="expenseYear"></select>
+            </div>
+            <div class="control-group">
+              <label for="expenseMonth">Month</label>
+              <select id="expenseMonth"></select>
+            </div>
+            <button id="currentMonthBtn" class="button button-secondary" type="button">Current Month</button>
+            <button id="addExpenseBtn" class="button button-primary" type="button">＋ Add Expense</button>
+          </div>
+
+          <div class="filter-bar card">
+            <div class="search-wrap">
+              <span class="search-icon">⌕</span>
+              <input id="expenseSearch" type="search" placeholder="Search category or date…" autocomplete="off">
+            </div>
+            <div class="control-group compact">
+              <label for="categoryFilter">Category</label>
+              <select id="categoryFilter"></select>
+            </div>
+            <div class="control-group compact">
+              <label for="dateFilter">Date</label>
+              <input id="dateFilter" type="date">
+            </div>
+            <div class="control-group compact">
+              <label for="amountFilter">Amount</label>
+              <input id="amountFilter" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Exact amount">
+            </div>
+            <button id="clearFiltersBtn" class="button button-ghost" type="button">Clear Filters</button>
+          </div>
+
+          <div class="metric-row two">
+            <article class="metric-card accent">
+              <div>
+                <span class="metric-label">Total Selected Month</span>
+                <strong id="selectedMonthTotal">৳0.00</strong>
+                <small id="selectedMonthCount">0 transactions</small>
+              </div>
+              <div class="metric-icon">Σ</div>
+            </article>
+            <article class="metric-card">
+              <div>
+                <span class="metric-label">Filtered Result Total</span>
+                <strong id="filteredTotal">৳0.00</strong>
+                <small id="filteredCount">0 shown</small>
+              </div>
+              <div class="metric-icon">⌕</div>
+            </article>
+          </div>
+
+          <section id="monthlyInsight" class="insight-strip card" aria-live="polite" aria-label="Month-over-month spending insight">
+            <div class="insight-symbol" aria-hidden="true">↗</div>
+            <div class="insight-copy"><strong>Monthly comparison</strong><span>Save expenses to see how this month compares with the previous month.</span></div>
+            <span id="monthlyInsightValue" class="insight-value">Waiting for data</span>
+          </section>
+
+          <div class="card table-card">
+            <div class="section-heading">
+              <div>
+                <h3 id="expenseTableTitle">October 2026 Expenses</h3>
+                <span class="muted small">Tap or double-click a row to edit. Press Enter to edit; Delete to delete.</span>
+              </div>
+              <button id="refreshBtn" class="button button-ghost" type="button">↻ Refresh</button>
+            </div>
+            <div class="table-scroll">
+              <table class="expense-table" aria-label="Expenses">
+                <thead>
+                  <tr><th>Date</th><th>Expense Category</th><th class="amount-col">Amount</th></tr>
+                </thead>
+                <tbody id="expenseTableBody"></tbody>
+              </table>
+            </div>
+            <div id="emptyState" class="empty-state hidden">
+              <div class="empty-icon">◌</div>
+              <h3>No expenses found</h3>
+              <p class="muted">Add an expense or clear the active filters.</p>
+              <button id="emptyAddBtn" class="button button-primary" type="button">Add Expense</button>
+            </div>
+            <div class="table-footer">
+              <span id="tableRecordSummary" class="muted">0 records</span>
+              <strong>Total Expense <span id="tableTotal">৳0.00</span></strong>
+            </div>
+          </div>
+        </section>
+
+        <section id="tab-monthly" class="tab-panel">
+          <div class="control-bar card">
+            <div class="control-group"><label for="monthlyYear">Year</label><select id="monthlyYear"></select></div>
+            <div class="control-group"><label for="monthlyMonth">Month</label><select id="monthlyMonth"></select></div>
+            <button id="monthlyCurrentBtn" class="button button-secondary" type="button">Current Month</button>
+          </div>
+          <div class="metric-grid five" id="monthlyMetrics"></div>
+          <div class="summary-grid">
+            <div class="card summary-table-card">
+              <div class="section-heading"><div><h3>Category breakdown</h3><span class="muted small">All 11 categories are always shown.</span></div></div>
+              <div class="table-scroll"><table class="summary-table"><thead><tr><th>Category</th><th>Amount</th><th>%</th><th>Transactions</th></tr></thead><tbody id="monthlyCategoryBody"></tbody></table></div>
+            </div>
+            <div class="card chart-card"><div class="section-heading"><div><h3>Monthly category mix</h3><span class="muted small">Share of selected month</span></div></div><div id="monthlyChart" class="chart-wrap"></div></div>
+          </div>
+        </section>
+
+        <section id="tab-yearly" class="tab-panel">
+          <div class="control-bar card"><div class="control-group"><label for="yearlyYear">Year</label><select id="yearlyYear"></select></div><button id="yearlyCurrentBtn" class="button button-secondary" type="button">Current Year</button></div>
+          <div class="metric-grid six" id="yearlyMetrics"></div>
+          <div class="summary-grid">
+            <div class="card summary-table-card"><div class="section-heading"><div><h3>Annual category breakdown</h3><span class="muted small">All 11 categories are always shown.</span></div></div><div class="table-scroll"><table class="summary-table"><thead><tr><th>Category</th><th>Amount</th><th>%</th><th>Transactions</th></tr></thead><tbody id="yearlyCategoryBody"></tbody></table></div></div>
+            <div class="card chart-card"><div class="section-heading"><div><h3>Yearly spending trend</h3><span class="muted small">January–December</span></div></div><div id="yearlyTrendChart" class="chart-wrap"></div></div>
+          </div>
+          <div class="card monthly-table-card"><div class="section-heading"><div><h3>Monthly totals</h3></div></div><div class="table-scroll"><table class="monthly-total-table"><thead><tr><th>Month</th><th>Total</th><th>Transactions</th></tr></thead><tbody id="yearlyMonthsBody"></tbody></table></div></div>
+        </section>
+
+        <section id="tab-total" class="tab-panel">
+          <div class="metric-grid seven" id="totalMetrics"></div>
+          <div class="summary-grid">
+            <div class="card summary-table-card"><div class="section-heading"><div><h3>Lifetime category breakdown</h3><span class="muted small">First expense through latest expense</span></div></div><div class="table-scroll"><table class="summary-table"><thead><tr><th>Category</th><th>Amount</th><th>%</th><th>Transactions</th></tr></thead><tbody id="totalCategoryBody"></tbody></table></div></div>
+            <div class="card chart-card"><div class="section-heading"><div><h3>Lifetime category visualization</h3><span class="muted small">Cumulative share</span></div></div><div id="totalChart" class="chart-wrap"></div></div>
+          </div>
+        </section>
+      </section>
+
+      <footer class="app-footer">
+        <span>Private cloud database: Google Drive / Google Sheets</span>
+        <span>Schema <span id="schemaVersionFooter">—</span></span>
+      </footer>
+    </main>
+  </div>
+
+  <div id="settingsModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal-backdrop" data-close-settings></div>
+    <div class="modal-panel settings-panel">
+      <div class="modal-header"><div><p class="eyebrow">UTILITY / CONNECTION</p><h2 id="settingsTitle">Settings & Database</h2></div><button class="icon-button" type="button" data-close-settings aria-label="Close">×</button></div>
+      <div class="settings-grid">
+        <div class="setting-item"><span class="setting-label">Google Account</span><strong id="settingsAccount">Google Account</strong></div>
+        <div class="setting-item"><span class="setting-label">Database</span><strong id="settingsDatabase">Not connected</strong></div>
+        <div class="setting-item"><span class="setting-label">Database Status</span><strong id="settingsDbStatus">—</strong></div>
+        <div class="setting-item"><span class="setting-label">Records</span><strong id="settingsRecordCount">0</strong></div>
+        <div class="setting-item"><span class="setting-label">Last synced</span><strong id="settingsLastSync">Not synced yet</strong></div>
+      </div>
+      <div class="settings-actions">
+        <button id="settingsSyncBtn" class="button button-primary" type="button">Sync Now</button>
+        <button id="settingsReconnectBtn" class="button button-secondary" type="button">Reconnect</button>
+        <button id="settingsOpenDatabaseBtn" class="button button-secondary" type="button">Open Google Sheet ↗</button>
+        <button id="settingsExportJsonBtn" class="button button-secondary" type="button">Export Backup JSON</button>
+        <button id="settingsExportCsvBtn" class="button button-secondary" type="button">Export CSV</button>
+        <button id="settingsSignOutBtn" class="button button-danger" type="button">Sign Out</button>
+      </div>
+      <div class="about-note"><strong>About</strong><p>Your expense data is stored in your private Google Drive spreadsheet. The application does not upload your financial data to any third-party database. Theme preference may be kept locally; financial records are not kept as a permanent local database.</p></div>
+    </div>
+  </div>
+
+  <div id="expenseModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="expenseModalTitle">
+    <div class="modal-backdrop" data-close-expense></div>
+    <div class="modal-panel expense-panel">
+      <div class="modal-header"><div><p class="eyebrow">TRANSACTION</p><h2 id="expenseModalTitle">Add Expense</h2></div><button class="icon-button" type="button" data-close-expense aria-label="Close">×</button></div>
+      <form id="expenseForm" novalidate>
+        <input id="expenseId" type="hidden">
+        <div class="form-grid">
+          <label class="form-field"><span>Date</span><input id="expenseDate" type="date" required></label>
+          <label class="form-field"><span>Expense Category</span><select id="expenseCategory" required></select></label>
+          <label class="form-field full"><span>Amount (৳)</span><input id="expenseAmount" type="number" inputmode="decimal" step="0.01" min="0.01" required placeholder="0.00"></label>
+        </div>
+        <p id="expenseFormError" class="form-error hidden"></p>
+        <div class="modal-actions"><button id="deleteExpenseFromEditorBtn" class="button button-danger hidden" type="button">Delete</button><span class="modal-action-spacer"></span><button class="button button-ghost" type="button" data-close-expense>Cancel</button><button id="saveExpenseBtn" class="button button-primary" type="submit">Save Expense</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="confirmModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="modal-backdrop" data-close-confirm></div>
+    <div class="modal-panel confirm-panel">
+      <div class="modal-header"><div><p class="eyebrow">CONFIRMATION</p><h2 id="confirmTitle">Delete expense?</h2></div></div>
+      <p id="confirmMessage" class="muted">This action will remove the expense from your Google Sheet.</p>
+      <div class="modal-actions"><button id="confirmCancelBtn" class="button button-ghost" type="button">Cancel</button><button id="confirmOkBtn" class="button button-danger" type="button">Delete</button></div>
+    </div>
+  </div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
